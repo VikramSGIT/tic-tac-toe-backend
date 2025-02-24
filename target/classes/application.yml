@@ -6,3 +6,7 @@ spring:
         username: training
         password: training
         driver-class-name: org.postgresql.Driver
+    security:
+        user:
+            name: dedshot
+            password: 123
