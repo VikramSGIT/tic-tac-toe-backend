@@ -28,7 +28,7 @@ public class PlayerServiceImpl implements PlayerService{
         List<DataPlayer> playerList = new ArrayList<>();
         List<Player> playerDAOlist = playerDAO.findAll();
         for(Player player : playerDAOlist) {
-            DataPlayer dataPlayer = new DataPlayer(player.getName(), player.getScore(), player.getPlayerType().getPlayerType());
+            DataPlayer dataPlayer = new DataPlayer(player.getId(), player.getName(), player.getScore(), player.getPlayerType());
             playerList.add(dataPlayer);
         }
 
@@ -40,9 +40,10 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public ResponseEntity<DataPlayer> findPlayerById(int id) throws PlayerNotFoundException {
-        Optional<Player> player = playerDAO.findById(id);
-        if(player.isPresent()) {
-            DataPlayer dataPlayer = new DataPlayer(player.get().getName(), player.get().getScore(), player.get().getPlayerType().getPlayerType());
+        Optional<Player> optionalPlayer = playerDAO.findById(id);
+        if(optionalPlayer.isPresent()) {
+            Player player = optionalPlayer.get();
+            DataPlayer dataPlayer = new DataPlayer(player.getId(), player.getName(), player.getScore(), player.getPlayerType());
             return new ResponseEntity<>(dataPlayer, HttpStatus.OK);
         }
         else throw new PlayerNotFoundException(id);
@@ -50,16 +51,17 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     @Transactional
-    public ResponseEntity<String> updatePlayer(String name, HttpSession session) throws PlayerNotFoundException {
-        int id = (Integer) session.getAttribute("id");
-        if(id == 0) throw new PlayerNotFoundException(0);
+    public ResponseEntity<DataPlayer> updatePlayer(String name, HttpSession session) throws PlayerNotFoundException {
+        Integer id = (Integer) session.getAttribute("id");
+        if(id == null || id == 0) throw new PlayerNotFoundException(0);
 
         Optional<Player> optionalPlayer = playerDAO.findById(id);
         if(optionalPlayer.isPresent()) {
             Player player = optionalPlayer.get();
             player.setName(name);
-            playerDAO.save(player);
-            return new ResponseEntity<>("Player name has been updated with " + name, HttpStatus.OK);
+            Player newPlayer = playerDAO.save(player);
+            DataPlayer dataPlayer = new DataPlayer(newPlayer.getId(), newPlayer.getName(), newPlayer.getScore(), newPlayer.getPlayerType());
+            return new ResponseEntity<>(dataPlayer, HttpStatus.OK);
         } else {
             throw new PlayerNotFoundException(id);
         }

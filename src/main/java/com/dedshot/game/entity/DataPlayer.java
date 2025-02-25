@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 public class DataPlayer {
+    private int id;
     private String name;
     private int score;
     private PlayerType playerType;

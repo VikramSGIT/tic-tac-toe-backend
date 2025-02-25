@@ -37,5 +37,9 @@ public class Player {
     private int score = 0;
 
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
-    @NonNull private PlayerType playerType;
+    @NonNull private PlayerType playerTypeEntity;
+
+    public com.dedshot.game.enums.PlayerType getPlayerType() {
+        return playerTypeEntity.getPlayerType();
+    }
 }

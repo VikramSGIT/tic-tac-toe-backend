@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
-@RequestMapping("/crm")
+@RequestMapping("/")
 @AllArgsConstructor
 @Slf4j
 public class PlayerRestController {
@@ -34,7 +34,7 @@ public class PlayerRestController {
     }
     
     @PutMapping("/players")
-    public ResponseEntity<String> updatePlayer(@RequestBody String name, HttpSession session) throws PlayerNotFoundException {
+    public ResponseEntity<DataPlayer> updatePlayer(@RequestBody String name, HttpSession session) throws PlayerNotFoundException {
         return playerService.updatePlayer(name, session);
     }
 }
