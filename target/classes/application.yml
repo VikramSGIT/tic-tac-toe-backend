@@ -6,7 +6,9 @@ spring:
         username: training
         password: training
         driver-class-name: org.postgresql.Driver
-    security:
-        user:
-            name: dedshot
-            password: 123
+    data:
+        redis:
+            host: 10.0.0.2
+            port: 6379
+    session:
+        timeout: 1h

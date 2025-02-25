@@ -1,20 +1,17 @@
 package com.dedshot.game.entity;
 
-import com.dedshot.game.enums.PlayerType;
-
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -23,7 +20,6 @@ import lombok.ToString;
 @Setter
 @Getter
 @NoArgsConstructor
-@RequiredArgsConstructor
 @ToString
 public class Player {
 
@@ -32,15 +28,14 @@ public class Player {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "players_seq")
     @SequenceGenerator(name = "players_seq", sequenceName = "players_player_id_seq", allocationSize = 1)
     @Column(name="player_id")
-    private int id;
+    private int id = 0;
 
     @Column(name="player_name")
     @NonNull private String name;
 
     @Column(name="player_score")
-    private int score;
+    private int score = 0;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name="player_type")
-    @NonNull private PlayerType type;
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
+    @NonNull private PlayerType playerType;
 }

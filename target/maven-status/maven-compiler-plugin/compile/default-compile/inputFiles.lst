@@ -1,9 +1,0 @@
-/mnt/coding/java/game/src/main/java/com/dedshot/game/TicTakTowApplication.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/controller/PlayerExceptionHandler.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/controller/PlayerRestController.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/dao/PlayerDAO.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/dao/PlayerDAOImpl.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/entity/Player.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/enums/PlayerType.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/errors/PlayerErrorResponse.java
-/mnt/coding/java/game/src/main/java/com/dedshot/game/errors/PlayerNotFoundException.java

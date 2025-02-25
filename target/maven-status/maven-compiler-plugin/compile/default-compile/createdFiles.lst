@@ -1,9 +1,0 @@
-com/dedshot/game/entity/Player.class
-com/dedshot/game/enums/PlayerType.class
-com/dedshot/game/dao/PlayerDAOImpl.class
-com/dedshot/game/TicTakTowApplication.class
-com/dedshot/game/dao/PlayerDAO.class
-com/dedshot/game/errors/PlayerNotFoundException.class
-com/dedshot/game/errors/PlayerErrorResponse.class
-com/dedshot/game/controller/PlayerRestController.class
-com/dedshot/game/controller/PlayerExceptionHandler.class
