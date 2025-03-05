@@ -5,7 +5,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import com.dedshot.game.entity.DataPlayer;
 import com.dedshot.game.service.LoginService;
 import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
@@ -19,7 +18,7 @@ public class LoginController {
     private LoginService loginService;
 
     @PostMapping("/login")
-    public ResponseEntity<DataPlayer> postMethodName(@RequestBody String body, HttpSession session) {
+    public ResponseEntity<String> postMethodName(@RequestBody String body, HttpSession session) {
         return loginService.addPlayer(body, session);
     }
     

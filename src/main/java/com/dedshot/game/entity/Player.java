@@ -1,12 +1,10 @@
 package com.dedshot.game.entity;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -35,11 +33,4 @@ public class Player {
 
     @Column(name="player_score")
     private int score = 0;
-
-    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
-    @NonNull private PlayerType playerTypeEntity;
-
-    public com.dedshot.game.enums.PlayerType getPlayerType() {
-        return playerTypeEntity.getPlayerType();
-    }
 }

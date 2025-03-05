@@ -4,47 +4,57 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.dao.PlayerDAO;
 import com.dedshot.game.entity.DataPlayer;
 import com.dedshot.game.entity.Player;
-import com.dedshot.game.entity.PlayerType;
+import com.dedshot.game.enums.PlayerTypes;
+import com.dedshot.game.utils.ServiceUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class LoginServiceImpl implements LoginService{
 
     private PlayerDAO playerDAO;
 
     @Override
     @Transactional
-    public ResponseEntity<DataPlayer> addPlayer(String name, HttpSession session) {
-        Integer id = (Integer) session.getAttribute("id");
+    public ResponseEntity<String> addPlayer(String name, HttpSession session) {
+        Integer id = (Integer) session.getAttribute(CommonConstants.PLAYER_ID);
         if(id != null) {
             Optional<Player> optionalPlayer = playerDAO.findById(id);
             if(optionalPlayer.isPresent()) {
                 Player player = optionalPlayer.get();
-                DataPlayer dataPlayer = new DataPlayer(player.getId(), player.getName(), player.getScore(), player.getPlayerType());
-                return new ResponseEntity<>(dataPlayer, HttpStatus.OK);
+                try {
+                    ObjectMapper om = new ObjectMapper();
+                    return new ResponseEntity<>(om.writeValueAsString(new DataPlayer(player, PlayerTypes.VIEWER)), ServiceUtils.getHeaders(), HttpStatus.OK);
+                } catch(Exception e) {
+                    log.error("Error while converting player: {} to JSON", id);
+                    log.error(e.getMessage());
+                    return new ResponseEntity<>("Error occured while processing player", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
             }
         }
-        PlayerType playerType = new PlayerType();
-        playerType.setPlayerType(com.dedshot.game.enums.PlayerType.VIEWER);
-
         Player player = new Player();
         player.setName(name);
-        player.setPlayerTypeEntity(playerType);
-
-        playerType.setPlayer(player);
+        
         
         Player newPlayer = playerDAO.save(player);
-        session.setAttribute("id", newPlayer.getId());
+        session.setAttribute(CommonConstants.PLAYER_ID, newPlayer.getId());
 
-        DataPlayer dataPlayer = new DataPlayer(newPlayer.getId(), newPlayer.getName(), newPlayer.getScore(), newPlayer.getPlayerType());
-
-        return new ResponseEntity<>(dataPlayer, HttpStatus.OK);
+        try {
+            ObjectMapper om = new ObjectMapper();
+            return new ResponseEntity<>(om.writeValueAsString(new DataPlayer(player, PlayerTypes.VIEWER)), ServiceUtils.getHeaders(), HttpStatus.OK);
+        } catch(Exception e) {
+            log.error("Error while converting player: {} to JSON", id);
+            log.error(e.getMessage());
+            return new ResponseEntity<>("Error occured while processing player", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    
 }

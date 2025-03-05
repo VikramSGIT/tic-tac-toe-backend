@@ -1,6 +1,6 @@
 package com.dedshot.game.enums;
 
-public enum PlayerType {
+public enum PlayerTypes {
     PLAYER1,
     PLAYER2,
     VIEWER
