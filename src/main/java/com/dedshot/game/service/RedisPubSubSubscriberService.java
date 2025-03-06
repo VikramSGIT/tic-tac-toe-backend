@@ -25,7 +25,7 @@ public class RedisPubSubSubscriberService implements MessageListener{
     public void onMessage(@NonNull Message message, @Nullable byte[] pattern) {
         Object obj = serializer.deserialize(message.getBody());
         if(obj == null) return;
-        Map<String, Object> commands = ServiceUtils.saftCastCommand(obj);
+        Map<String, Object> commands = (Map<String, Object>) obj;
 
         for(Entry<String, Object> command : commands.entrySet()) {
             if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_REMOVE)) {

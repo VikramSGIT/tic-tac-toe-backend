@@ -33,15 +33,4 @@ public class ServiceUtils {
             return null;
         }
     }
-
-    public Map<String, Object> saftCastCommand(Object obj) {
-        if(!(obj instanceof Map)) return null;
-        
-        Map<?, ?> rawMap = (Map<?, ?>) obj;
-        for(Map.Entry<?, ?> entry : rawMap.entrySet()) {
-            if(!(entry.getKey() instanceof String)) return null;
-            if(!(entry.getValue() instanceof Object)) return null;
-        }
-        return (Map<String, Object>) obj;
-    }
 }
