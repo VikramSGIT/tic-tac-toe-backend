@@ -11,7 +11,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.utils.ServiceUtils;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,8 +25,7 @@ public class RedisPubSubSubscriberService implements MessageListener{
     public void onMessage(@NonNull Message message, @Nullable byte[] pattern) {
         Object obj = serializer.deserialize(message.getBody());
         if(obj == null) return;
-
-        Map<String, Object> commands = (Map<String, Object>) obj;
+        Map<String, Object> commands = ServiceUtils.saftCastCommand(obj);
 
         for(Entry<String, Object> command : commands.entrySet()) {
             if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_REMOVE)) {
