@@ -5,12 +5,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.lang.NonNull;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import com.dedshot.game.constants.CommonConstants;
-import com.dedshot.game.utils.ServiceUtils;
+import com.dedshot.game.dao.GameState;
+import com.dedshot.game.errors.PlayerInvalidException;
+
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,46 +21,61 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RedisPubSubSubscriberService implements MessageListener{
 
-    @lombok.NonNull private GameSocketService socketService;
-    private final GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
+    @NonNull private final GameState gameState;
+    @NonNull private GameSocketService socketService;
+    private final JdkSerializationRedisSerializer serializer = new JdkSerializationRedisSerializer();
+
     @Override
-    public void onMessage(@NonNull Message message, @Nullable byte[] pattern) {
+    public void onMessage(@org.springframework.lang.NonNull Message message, @Nullable byte[] pattern) {
         Object obj = serializer.deserialize(message.getBody());
         if(obj == null) return;
         Map<String, Object> commands = (Map<String, Object>) obj;
 
         for(Entry<String, Object> command : commands.entrySet()) {
-            if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_REMOVE)) {
-                try {
+            try {
+                if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_REMOVE)) {
                     socketService.removeConnection((String) command.getValue());
-                } catch (IOException e) {
-                    log.error("Error occured while excuting {} command", CommonConstants.PLAYER_COMMAND_REMOVE);
-                    e.printStackTrace();
-                }
-            } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_REPLACE)) {
-                try {
+                } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_REPLACE)) {
                     socketService.replaceConnection((String) command.getValue());
-                } catch (IOException e) {
-                    log.error("Error occured while excuting {} command", CommonConstants.PLAYER_COMMAND_REPLACE);
-                    e.printStackTrace();
+                } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_PUT)) {
+                    socketService.broadcast(command.getValue());
+                } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_UPDATE)) {
+                    updatePlayer((Entry<String, Object>) command.getValue());
+                } else if(command.getKey().equals(CommonConstants.BOARDCAST_COMMAND)) {
+                    socketService.broadcast(command.getValue());
+                } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_TURN)) {
+                    Map<String, Object> data = (Map<String, Object>) command.getValue();
+                    socketService.sendMessage((Integer) data.get(CommonConstants.PLAYER_ID), Map.of(
+                        CommonConstants.PLAYER_TURN, data.get(CommonConstants.PLAYER_TURN)
+                    ));
                 }
-            } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_PUT)) {
-                try {
-                    socketService.broadcast(ServiceUtils.toJSONString(command.getValue()));
-                } catch (IOException e) {
-                    log.error("Error occured while excuting {} command", CommonConstants.PLAYER_COMMAND_PUT);
-                    e.printStackTrace();
-                }
-            } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_UPDATE)) {
-                try {
-                    Map<Integer, String> player = (Map<Integer, String>) command.getValue();
-                    socketService.broadcast(ServiceUtils.toJSONString(player));
-                } catch (IOException e) {
-                    log.error("Error occured while excuting {} command", CommonConstants.PLAYER_COMMAND_PUT);
-                    e.printStackTrace();
-                }
+            } catch (IOException e) {
+                log.error("Error occured while excuting {} command", command.getKey());
+                e.printStackTrace();
+            } catch (PlayerInvalidException e) {
+                log.error(e.getMessage());
+                e.printStackTrace();
             }
         }
-        log.debug(new String(message.getBody()));
+        log.debug(commands.toString());
+    }
+
+    private void updatePlayer(Entry<String, Object> playerData) throws IOException {
+        int id = Integer.parseInt(playerData.getKey());
+        if(gameState.getPlayer1Id() == id) {
+            gameState.setPlayer1Name((String) playerData.getValue());
+            socketService.broadcast(Map.of(CommonConstants.PLAYER_DATA, Map.of(
+                CommonConstants.PLAYER1_NAME, playerData.getValue(),
+                CommonConstants.PLAYER2_NAME, gameState.getPlayer2Name()
+            )));
+        } else if(gameState.getPlayer2Id() == id) {
+            gameState.setPlayer2Name((String) playerData.getValue());
+            socketService.broadcast(Map.of(CommonConstants.PLAYER_DATA, Map.of(
+                CommonConstants.PLAYER1_NAME, gameState.getPlayer1Name(),
+                CommonConstants.PLAYER2_NAME, playerData.getValue()
+            )));
+        } else {
+            // TODO: See how to handle viewer name update
+        }
     }
 }

@@ -36,9 +36,10 @@ public class PlayerServiceImpl implements PlayerService {
         List<DataPlayer> playerList = new ArrayList<>();
         List<Player> playerDAOlist = playerDAO.findAll();
 
-        // Reduces DB hit cound
+        /////// Reduces DB hit cound /////////
         int player1Id = state.getPlayer1Id();
         int player2Id = state.getPlayer2Id();
+        //////////////////////////////////////
         for(Player player : playerDAOlist) {
             PlayerTypes type = PlayerTypes.VIEWER;
             if(player1Id == player.getId()) type = PlayerTypes.PLAYER1;

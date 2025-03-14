@@ -1,29 +1,38 @@
 package com.dedshot.game.entity;
 
 import java.io.Serializable;
+import com.dedshot.game.enums.PlayerTypes;
+
 import lombok.Data;
 
 @Data
 public class GameBoard implements Serializable{
-    private int[][] board;
+    private PlayerTypes[][] board;
+
+    public static GameBoard newGameBoard() { return new GameBoard(); }
     public GameBoard() {
-        this.board = new int[][] {
-            new int[] {0, 0, 0},
-            new int[] {0, 0, 0},
-            new int[] {0, 0, 0}
+        this.board = new PlayerTypes[][] {
+            new PlayerTypes[] {null, null, null},
+            new PlayerTypes[] {null, null, null},
+            new PlayerTypes[] {null, null, null}
         };
     }
 
-    public int[][] set(Integer x, Integer y, Integer value) {
-        if(validate(x) && validate(y)) {
+    public PlayerTypes[][] set(int x, int y, PlayerTypes value) {
+        if(validate(x, y)) {
             board[x][y] = value;
+        } else {
+            return null;
         }
         return board;
     }
 
-    public int[][] get() { return board; }
+    public PlayerTypes[][] get() { return board; }
 
-    private boolean validate(Integer i) {
-        return i >=0 && i < 3;
+    private boolean validate(int x, int y) {
+        if(x < 0 || x > 2) return false;
+        if(y < 0 || y > 2) return false;
+        if(board[x][y] != null) return false;
+        return true;
     }
 }

@@ -1,10 +1,13 @@
 package com.dedshot.game.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.entity.DataPlayer;
 import com.dedshot.game.errors.PlayerNotFoundException;
 import com.dedshot.game.service.PlayerService;
@@ -33,8 +36,10 @@ public class PlayerRestController {
         return playerService.findAll();
     }
     
+    @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
     @PutMapping("/players")
     public ResponseEntity<DataPlayer> updatePlayer(@RequestBody String name, HttpSession session) throws PlayerNotFoundException {
+        log.debug("Requested update for player: {} with {}", session.getAttribute(CommonConstants.PLAYER_ID), name);
         return playerService.updatePlayer(name, session);
     }
 }

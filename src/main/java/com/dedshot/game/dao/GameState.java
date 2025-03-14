@@ -1,5 +1,7 @@
 package com.dedshot.game.dao;
 
+import java.util.Objects;
+
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 import com.dedshot.game.constants.CommonConstants;
@@ -21,6 +23,17 @@ public class GameState {
 
     public String getPlayer1SessionId() {
         return (String) verify(redis.get(CommonConstants.PLAYER1_SESSION));
+    }
+
+    public String getPlayer1Name() {
+        String i = (String) redis.get(CommonConstants.PLAYER1_NAME);
+        if(Objects.isNull(i)) return CommonConstants.PLAYER_OFFLINE_NAME;
+        return i;
+    }
+
+    public String setPlayer1Name(String name) {
+        set(CommonConstants.PLAYER1_NAME, name);
+        return name;
     }
 
     public int setPlayer1Id(int id) {
@@ -54,6 +67,17 @@ public class GameState {
         return (String) verify(redis.get(CommonConstants.PLAYER2_SESSION));
     }
 
+    public String getPlayer2Name() {
+        String i = (String) redis.get(CommonConstants.PLAYER2_NAME);
+        if(Objects.isNull(i)) return CommonConstants.PLAYER_OFFLINE_NAME;
+        return i;
+    }
+
+    public String setPlayer2Name(String name) {
+        set(CommonConstants.PLAYER2_NAME, name);
+        return name;
+    }
+
     public int setPlayer2Id(int id) {
         set(CommonConstants.PLAYER2, id);
         return id;
@@ -76,24 +100,24 @@ public class GameState {
 
 
 
-    public int getTurn() {
-        return (int) verify(redis.get(CommonConstants.TURN));
+    public PlayerTypes getTurn() {
+        return (PlayerTypes) verify(redis.get(CommonConstants.TURN));
     }
 
-    public int setTurn(int id) {
-        set(CommonConstants.TURN, id);
-        return id;
+    public PlayerTypes setTurn(PlayerTypes player) {
+        set(CommonConstants.TURN, player);
+        return player;
     }
 
-    public int flipTurn() {
-        return setTurn(getTurn() == getPlayer1Id() ? getPlayer2Id() : getPlayer1Id());
+    public PlayerTypes flipTurn() {
+        return setTurn(Objects.equals(getTurn(), PlayerTypes.PLAYER1) ? PlayerTypes.PLAYER2 : PlayerTypes.PLAYER1);
     }
 
     public boolean isTurnSet() {return redis.get(CommonConstants.TURN) != null; }
 
 
     public GameBoard getBoard() {
-        return (GameBoard) verify(redis.get(CommonConstants.GAME_BOARD));
+        return (GameBoard) get(CommonConstants.GAME_BOARD);
     }
 
     public GameBoard setGameBoard(GameBoard board) {
@@ -105,8 +129,8 @@ public class GameState {
 
 
     public void ifGameInit() {
-        if(!isTurnSet()) setTurn(getPlayer1Id());
-        if(!isGameBoardSet()) setGameBoard(new GameBoard());
+        if(!isTurnSet()) setTurn(PlayerTypes.PLAYER1);
+        if(!isGameBoardSet()) setGameBoard(GameBoard.newGameBoard());
     }
 
 

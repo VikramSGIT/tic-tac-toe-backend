@@ -32,8 +32,7 @@ public class LoginServiceImpl implements LoginService{
             if(optionalPlayer.isPresent()) {
                 Player player = optionalPlayer.get();
                 try {
-                    ObjectMapper om = new ObjectMapper();
-                    return new ResponseEntity<>(om.writeValueAsString(new DataPlayer(player, PlayerTypes.VIEWER)), ServiceUtils.getHeaders(), HttpStatus.OK);
+                    return new ResponseEntity<>(ServiceUtils.toJSONString(new DataPlayer(player, PlayerTypes.VIEWER)), ServiceUtils.getHeaders(), HttpStatus.OK);
                 } catch(Exception e) {
                     log.error("Error while converting player: {} to JSON", id);
                     log.error(e.getMessage());
@@ -56,5 +55,24 @@ public class LoginServiceImpl implements LoginService{
             log.error(e.getMessage());
             return new ResponseEntity<>("Error occured while processing player", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @Override
+    public ResponseEntity<String> loadPlayer(HttpSession session) {
+        Integer id = (Integer) session.getAttribute(CommonConstants.PLAYER_ID);
+        if(id != null) {
+            Optional<Player> optionalPlayer = playerDAO.findById(id);
+            if(optionalPlayer.isPresent()) {
+                Player player = optionalPlayer.get();
+                try {
+                    return new ResponseEntity<>(ServiceUtils.toJSONString(new DataPlayer(player, PlayerTypes.VIEWER)), ServiceUtils.getHeaders(), HttpStatus.OK);
+                } catch(Exception e) {
+                    log.error("Error while converting player: {} to JSON", id);
+                    e.printStackTrace();
+                    return new ResponseEntity<>("Error occured while processing player", HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            }
+        }
+        return new ResponseEntity<>("Failed to relogin. Please try to login.", HttpStatus.NOT_FOUND);
     }
 }

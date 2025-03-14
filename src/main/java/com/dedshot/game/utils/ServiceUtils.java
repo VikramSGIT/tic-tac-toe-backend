@@ -29,8 +29,18 @@ public class ServiceUtils {
             return om.writeValueAsString(obj); 
         } catch (JsonProcessingException e) {
             log.error("Error while converting object to JSON.");
-            log.debug(e.getMessage());
-            return null;
+            e.printStackTrace();
         }
+        return null;
+    }
+
+    public <T> T toObject(String json, Class<T> type) {
+        try {
+            return om.readValue(json, type);
+        } catch(JsonProcessingException e) {
+            log.error("Error occured while converting json to {}", type.toString());
+            e.printStackTrace();
+        }
+        return null;
     }
 }
