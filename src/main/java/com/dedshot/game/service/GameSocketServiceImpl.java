@@ -115,14 +115,15 @@ public class GameSocketServiceImpl implements GameSocketService{
         String type = (String) session.getAttributes().get(CommonConstants.SOCKET_REMOVAL_TYPE);
 
         if(type == null) {
+            String debugMessage = "Player: {}/{} has been disconnected";
             if(id == state.getPlayer1Id()) {
                 state.setPlayer1Off();
-                log.debug("Player: {}/{} has been disconnected", session.getAttributes().get(CommonConstants.PLAYER_ID), PlayerTypes.PLAYER1);
+                log.debug(debugMessage, session.getAttributes().get(CommonConstants.PLAYER_ID), PlayerTypes.PLAYER1);
             } else if (id == state.getPlayer2Id()) {
                 state.setPlayer2Off();
-                log.debug("Player: {}/{} has been disconnected", session.getAttributes().get(CommonConstants.PLAYER_ID), PlayerTypes.PLAYER2);
+                log.debug(debugMessage, session.getAttributes().get(CommonConstants.PLAYER_ID), PlayerTypes.PLAYER2);
             } else {
-                log.debug("Player: {}/{} has been disconnected", session.getAttributes().get(CommonConstants.PLAYER_ID), PlayerTypes.VIEWER);
+                log.debug(debugMessage, session.getAttributes().get(CommonConstants.PLAYER_ID), PlayerTypes.VIEWER);
             }
         }
 
@@ -147,7 +148,7 @@ public class GameSocketServiceImpl implements GameSocketService{
     }
 
     @Override
-    public void handlePlayerBoard(ConcurrentWebSocketSessionDecorator session, Integer x, Integer y) throws IOException{
+    public void handlePlayerBoard(ConcurrentWebSocketSessionDecorator session, Integer x, Integer y) throws IOException, PlayerInvalidException{
         int id = (int) session.getAttributes().get(CommonConstants.PLAYER_ID);
         int player1Id = state.getPlayer1Id();
         int player2Id = state.getPlayer2Id();
@@ -160,6 +161,13 @@ public class GameSocketServiceImpl implements GameSocketService{
                 sendInvalidMoveMessage(session);
                 return;
             }
+
+            if(board.checkStatus(turn)) {
+                sendWonMessage(id, player1Id, player2Id);
+                sendClosingMessage(session, null);
+                return;
+            }
+
             state.setGameBoard(board);
     
             state.flipTurn();
@@ -217,5 +225,32 @@ public class GameSocketServiceImpl implements GameSocketService{
             CommonConstants.SOCKET_STATUS_CODE, "400",
             CommonConstants.SOCKET_MESSAGE, "Invalid move"
         ))));
+    }
+
+    private void sendWonMessage(int playerWonId, int player1Id, int player2Id) throws PlayerInvalidException {
+        Optional<Player> optionalPlayer = playerDAO.findById(playerWonId);
+        if(optionalPlayer.isEmpty()) throw new PlayerInvalidException();
+        Player player = optionalPlayer.get();
+        player.setScore(player.getScore() + CommonConstants.PLAYER_SCORE_INCREASE);
+        playerDAO.save(player);
+
+        optionalPlayer = playerDAO.findById(player1Id);
+        if(optionalPlayer.isEmpty()) throw new PlayerInvalidException();
+        Player player1 = optionalPlayer.get();
+        optionalPlayer = playerDAO.findById(player2Id);
+        if(optionalPlayer.isEmpty()) throw new PlayerInvalidException();
+        Player player2 = optionalPlayer.get();
+
+        pubSubService.playerWon(PlayerTypes.PLAYER1, player1.getScore(), player2.getScore());
+        resetGame();
+    }
+
+    private void resetGame() {
+        PlayerTypes turn = state.setTurn(PlayerTypes.PLAYER1);
+        GameBoard board = state.setGameBoard(new GameBoard());
+        
+        pubSubService.sendData2Player(state.getPlayer1Id(), turn);
+        pubSubService.sendData2Player(state.getPlayer2Id(), turn);
+        pubSubService.playerMove(Map.of(CommonConstants.GAME_BOARD, board.getBoard()));
     }
 }

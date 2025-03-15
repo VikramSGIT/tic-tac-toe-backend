@@ -1,8 +1,8 @@
 package com.dedshot.game.dao;
 
 import java.util.Objects;
-
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
 import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.entity.GameBoard;
@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameState {
     private ValueOperations<String, Object> redis;
+    private ZSetOperations<String, Object> redisZSet;
 
     public int getPlayer1Id() {
         return (int) verify(redis.get(CommonConstants.PLAYER1));
@@ -146,6 +147,10 @@ public class GameState {
         if(getPlayer1Id() == playerId) return PlayerTypes.PLAYER1;
         else if (getPlayer2Id() == playerId) return PlayerTypes.PLAYER2;
         return PlayerTypes.VIEWER;
+    }
+
+    public String getNextPlayerSession() {
+        return null;
     }
 
     private Object verify(Object val) {

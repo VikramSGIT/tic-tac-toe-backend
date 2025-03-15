@@ -9,6 +9,12 @@ public class CommonConstants {
     public final String PLAYER_ID = "playerId";
     public final String PLAYER_TYPE = "playerType";
     public final String PLAYER_TURN = "playerTurn";
+    public final String PLAYER_SCORE = "playerScore";
+    public final String PLAYER1_SCORE = "player1Score";
+    public final String PLAYER2_SCORE = "player2Score";
+    public final String PLAYER_WON = "playerWon";
+
+    public final int PLAYER_SCORE_INCREASE = 1;
 
     public final String PLAYER1 = "player1";
     public final String PLAYER1_SESSION = "player1Session";
@@ -32,6 +38,7 @@ public class CommonConstants {
     public final String PLAYER_COMMAND_UPDATE = "update";
     public final String PLAYER_COMMAND_TURN = "data";
     public final String BOARDCAST_COMMAND = "updatePlayers";
+    public final String PLAYER_COMMAND_WON = "won";
 
     public final String SOCKET_REMOVAL_TYPE = "type";
     public final String SOCKET_STATUS_CODE = "status_code";

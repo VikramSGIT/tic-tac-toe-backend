@@ -48,6 +48,10 @@ public class RedisPubSubSubscriberService implements MessageListener{
                     socketService.sendMessage((Integer) data.get(CommonConstants.PLAYER_ID), Map.of(
                         CommonConstants.PLAYER_TURN, data.get(CommonConstants.PLAYER_TURN)
                     ));
+                } else if(command.getKey().equals(CommonConstants.PLAYER_COMMAND_WON)) {
+                    socketService.broadcast(Map.of(
+                        CommonConstants.PLAYER_COMMAND_WON, command.getValue()
+                    ));
                 }
             } catch (IOException e) {
                 log.error("Error occured while excuting {} command", command.getKey());

@@ -10,7 +10,7 @@ public interface GameSocketService {
     public void removeConnection(ConcurrentWebSocketSessionDecorator session);
     public void removeConnection(String sessionId) throws IOException;
     public void replaceConnection(String sessionId) throws IOException;
-    public void handlePlayerBoard(ConcurrentWebSocketSessionDecorator session, Integer x, Integer y) throws IOException;
+    public void handlePlayerBoard(ConcurrentWebSocketSessionDecorator session, Integer x, Integer y) throws IOException, PlayerInvalidException;
     public void broadcast(Object data) throws IOException;
     public void sendMessage(int id, Object data) throws IOException, PlayerInvalidException;
 }
