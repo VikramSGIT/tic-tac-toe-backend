@@ -8,11 +8,9 @@ import org.springframework.stereotype.Service;
 import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.enums.PlayerTypes;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @AllArgsConstructor
-@Slf4j
 public class RedisPubSubServiceImpl implements RedisPubSubService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ChannelTopic topic;
@@ -46,7 +44,7 @@ public class RedisPubSubServiceImpl implements RedisPubSubService {
     }
 
     @Override
-    public void sendData2Player(int playerId, Object data) {
+    public void sendTrun(int playerId, Object data) {
         redisTemplate.convertAndSend(topic.getTopic(), Map.of(
             CommonConstants.PLAYER_COMMAND_TURN, Map.of(
                 CommonConstants.PLAYER_ID, playerId,
@@ -62,6 +60,15 @@ public class RedisPubSubServiceImpl implements RedisPubSubService {
                 CommonConstants.PLAYER_TYPE, playerType,
                 CommonConstants.PLAYER1_SCORE, score1,
                 CommonConstants.PLAYER2_SCORE, score2
+        )));
+    }
+
+    @Override
+    public void updatePlayerType(String socketSessionId, PlayerTypes playerType) {
+        redisTemplate.convertAndSend(topic.getTopic(), Map.of(
+            CommonConstants.PLAYER_COMMAND_TYPE_UPDATE, Map.of(
+                CommonConstants.SOCKET_SESSION_ID, socketSessionId,
+                CommonConstants.PLAYER_TYPE, playerType
         )));
     }
 }

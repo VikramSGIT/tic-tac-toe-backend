@@ -2,6 +2,7 @@ package com.dedshot.game.service;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
@@ -10,8 +11,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.dao.GameState;
+import com.dedshot.game.enums.PlayerTypes;
 import com.dedshot.game.errors.PlayerInvalidException;
-
+import com.dedshot.game.errors.PlayerNotFoundException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,11 +54,19 @@ public class RedisPubSubSubscriberService implements MessageListener{
                     socketService.broadcast(Map.of(
                         CommonConstants.PLAYER_COMMAND_WON, command.getValue()
                     ));
+                } else if(Objects.equals(command.getKey(), CommonConstants.PLAYER_COMMAND_TYPE_UPDATE)) {
+                    Map<String, Object> value = (Map<String, Object>) command.getValue();
+                    String sessionId = (String) value.get(CommonConstants.SOCKET_SESSION_ID);
+                    PlayerTypes playerType = (PlayerTypes) value.get(CommonConstants.PLAYER_TYPE);
+                    socketService.ifSetPlayerType(sessionId, playerType);
                 }
             } catch (IOException e) {
                 log.error("Error occured while excuting {} command", command.getKey());
                 e.printStackTrace();
             } catch (PlayerInvalidException e) {
+                log.error(e.getMessage());
+                e.printStackTrace();
+            } catch (PlayerNotFoundException e) {
                 log.error(e.getMessage());
                 e.printStackTrace();
             }

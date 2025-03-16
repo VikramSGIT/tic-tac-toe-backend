@@ -39,8 +39,10 @@ public class CommonConstants {
     public final String PLAYER_COMMAND_TURN = "data";
     public final String BOARDCAST_COMMAND = "updatePlayers";
     public final String PLAYER_COMMAND_WON = "won";
+    public final String PLAYER_COMMAND_TYPE_UPDATE = "typeUpdate";
 
     public final String SOCKET_REMOVAL_TYPE = "type";
     public final String SOCKET_STATUS_CODE = "status_code";
     public final String SOCKET_MESSAGE = "message";
+    public final String SOCKET_SESSION_ID = "socketSessionId";
 }

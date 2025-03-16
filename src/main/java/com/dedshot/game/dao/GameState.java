@@ -1,8 +1,10 @@
 package com.dedshot.game.dao;
 
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Component;
 import com.dedshot.game.constants.CommonConstants;
 import com.dedshot.game.entity.GameBoard;
@@ -48,7 +50,9 @@ public class GameState {
     }
 
     public void setPlayer1Off() {
-        redis.set(CommonConstants.PLAYER1, CommonConstants.PLAYER_OFFLINE);
+        setPlayer1Id(CommonConstants.PLAYER_OFFLINE);
+        setPlayer1Name(CommonConstants.PLAYER_OFFLINE_NAME);
+        setPlayer1SessionId(CommonConstants.PLAYER_OFFLINE_NAME);
     }
 
     public boolean isPlayer1Off() {
@@ -90,7 +94,9 @@ public class GameState {
     }
 
     public void setPlayer2Off() {
-        redis.set(CommonConstants.PLAYER2, CommonConstants.PLAYER_OFFLINE);
+        setPlayer2Id(CommonConstants.PLAYER_OFFLINE);
+        setPlayer2Name(CommonConstants.PLAYER_OFFLINE_NAME);
+        setPlayer2SessionId(CommonConstants.PLAYER_OFFLINE_NAME);
     }
 
     public boolean isPlayer2Off() {
@@ -134,6 +140,15 @@ public class GameState {
         if(!isGameBoardSet()) setGameBoard(GameBoard.newGameBoard());
     }
 
+    public String addPlayerSession(String sessionId) {
+        redisZSet.add(CommonConstants.SOCKET_SESSION_ID, sessionId, System.currentTimeMillis());
+        return sessionId;
+    }
+
+    public void removePlayerSession(String sessionId) {
+        redisZSet.remove(CommonConstants.SOCKET_SESSION_ID, sessionId);
+    }
+
 
     public void set(String id, Object value) {
         redis.set(id, value);
@@ -149,8 +164,10 @@ public class GameState {
         return PlayerTypes.VIEWER;
     }
 
-    public String getNextPlayerSession() {
-        return null;
+    public String popNextPlayerSession() {
+        Set<TypedTuple<Object>> players = redisZSet.popMin(CommonConstants.SOCKET_SESSION_ID, 1);
+        if(players == null || players.isEmpty()) return null;
+        return (String) players.iterator().next().getValue();
     }
 
     private Object verify(Object val) {

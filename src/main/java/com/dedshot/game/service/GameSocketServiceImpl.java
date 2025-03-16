@@ -41,7 +41,7 @@ public class GameSocketServiceImpl implements GameSocketService{
             state.setPlayer1Id(id);
             state.setPlayer1SessionId(session.getId());
 
-            sendMessage(session, Map.of(CommonConstants.PLAYER_TYPE, PlayerTypes.PLAYER1));
+            sendTypeData(session, PlayerTypes.PLAYER1);
             sendMessage(session, Map.of(CommonConstants.PLAYER_TURN, state.getTurn()));
             sendMessage(session, Map.of(
                 CommonConstants.PLAYER_DATA, Map.of(
@@ -54,7 +54,7 @@ public class GameSocketServiceImpl implements GameSocketService{
             state.setPlayer2Id(id);
             state.setPlayer2SessionId(session.getId());
 
-            sendMessage(session, Map.of(CommonConstants.PLAYER_TYPE, PlayerTypes.PLAYER2));
+            sendTypeData(session, PlayerTypes.PLAYER2);
             sendMessage(session, Map.of(CommonConstants.PLAYER_TURN, state.getTurn()));
             sendMessage(session, Map.of(
                 CommonConstants.PLAYER_DATA, Map.of(
@@ -71,7 +71,7 @@ public class GameSocketServiceImpl implements GameSocketService{
 
             state.setPlayer1Name(optionalPlayer.get().getName());
             state.ifGameInit();
-            sendMessage(session, Map.of(CommonConstants.PLAYER_TYPE, PlayerTypes.PLAYER1));
+            sendTypeData(session, PlayerTypes.PLAYER1);
             sendMessage(session, Map.of(CommonConstants.PLAYER_TURN, state.getTurn()));
             pubSubService.broadcast(Map.of(
                 CommonConstants.PLAYER_DATA, Map.of(
@@ -88,7 +88,7 @@ public class GameSocketServiceImpl implements GameSocketService{
 
             state.setPlayer2Name(optionalPlayer.get().getName());
             state.ifGameInit();
-            sendMessage(session, Map.of(CommonConstants.PLAYER_TYPE, PlayerTypes.PLAYER2));
+            sendTypeData(session, PlayerTypes.PLAYER2);
             sendMessage(session, Map.of(CommonConstants.PLAYER_TURN, state.getTurn()));
             pubSubService.broadcast(Map.of(
                 CommonConstants.PLAYER_DATA, Map.of(
@@ -97,13 +97,14 @@ public class GameSocketServiceImpl implements GameSocketService{
                 )
             ));
         } else {
-            sendMessage(session, Map.of(CommonConstants.PLAYER_TYPE, PlayerTypes.VIEWER));
+            sendTypeData(session, PlayerTypes.VIEWER);
             sendMessage(session, Map.of(
                 CommonConstants.PLAYER_DATA, Map.of(
                     CommonConstants.PLAYER1_NAME, state.getPlayer1Name(),
                     CommonConstants.PLAYER2_NAME, state.getPlayer2Name()
                 )
             ));
+            state.addPlayerSession(session.getId());
         }
 
         sendMessage(session, Map.of(CommonConstants.GAME_BOARD, state.getBoard().getBoard()));
@@ -128,8 +129,8 @@ public class GameSocketServiceImpl implements GameSocketService{
         }
 
         sessions.remove(session.getId());
+        state.removePlayerSession(session.getId());
     }
-
 
     @Override
     public void removeConnection(String sessionId) throws IOException{
@@ -164,7 +165,7 @@ public class GameSocketServiceImpl implements GameSocketService{
 
             if(board.checkStatus(turn)) {
                 sendWonMessage(id, player1Id, player2Id);
-                sendClosingMessage(session, null);
+                resetGame();
                 return;
             }
 
@@ -175,8 +176,8 @@ public class GameSocketServiceImpl implements GameSocketService{
             pubSubService.playerMove(Map.of(CommonConstants.GAME_BOARD, board.getBoard()));
 
             turn = state.getTurn();
-            pubSubService.sendData2Player(player1Id, turn);
-            pubSubService.sendData2Player(player2Id, turn);
+            pubSubService.sendTrun(player1Id, turn);
+            pubSubService.sendTrun(player2Id, turn);
         } else {
             sendInvalidMoveMessage(session);
         }
@@ -206,6 +207,40 @@ public class GameSocketServiceImpl implements GameSocketService{
         }
     }
 
+    @Override
+    public void ifSetPlayerType(String socketSessionId, PlayerTypes playerType) throws PlayerInvalidException, PlayerNotFoundException, IOException {
+        ConcurrentWebSocketSessionDecorator ws = sessions.get(socketSessionId);
+        if(ws != null) {
+            Integer id = (Integer) ws.getAttributes().get(CommonConstants.PLAYER_ID);
+            if(id == null) throw new PlayerInvalidException();
+
+            Optional<Player> optionalPlayer = playerDAO.findById(id);
+            if(optionalPlayer.isEmpty()) throw new PlayerNotFoundException(id);
+            Player player = optionalPlayer.get();
+
+            if(Objects.equals(playerType, PlayerTypes.PLAYER1)) {
+                state.setPlayer1Id(id);
+                state.setPlayer1Name(player.getName());
+                state.setPlayer1SessionId(ws.getId());
+
+                pubSubService.broadcast(Map.of(CommonConstants.PLAYER_DATA, Map.of(
+                    CommonConstants.PLAYER1_NAME, state.getPlayer1Name(),
+                    CommonConstants.PLAYER2_NAME, state.getPlayer2Name()
+                )));
+            } else if(Objects.equals(playerType, PlayerTypes.PLAYER2)) {
+                state.setPlayer2Id(id);
+                state.setPlayer2Name(player.getName());
+                state.setPlayer2SessionId(ws.getId());
+
+                pubSubService.broadcast(Map.of(CommonConstants.PLAYER_DATA, Map.of(
+                    CommonConstants.PLAYER1_NAME, state.getPlayer1Name(),
+                    CommonConstants.PLAYER2_NAME, state.getPlayer2Name()
+                )));
+            }
+            sendTypeData(ws, playerType);
+        }
+    }
+
     private void sendMessage(ConcurrentWebSocketSessionDecorator ws, Object message) throws IOException {
         ws.sendMessage(new TextMessage(ServiceUtils.toJSONString(Map.of(
             CommonConstants.SOCKET_STATUS_CODE, "200",
@@ -227,6 +262,10 @@ public class GameSocketServiceImpl implements GameSocketService{
         ))));
     }
 
+    private void sendTypeData(ConcurrentWebSocketSessionDecorator ws, PlayerTypes playerType) throws IOException{
+        sendMessage(ws, Map.of(CommonConstants.PLAYER_TYPE, playerType));
+    }
+
     private void sendWonMessage(int playerWonId, int player1Id, int player2Id) throws PlayerInvalidException {
         Optional<Player> optionalPlayer = playerDAO.findById(playerWonId);
         if(optionalPlayer.isEmpty()) throw new PlayerInvalidException();
@@ -242,15 +281,25 @@ public class GameSocketServiceImpl implements GameSocketService{
         Player player2 = optionalPlayer.get();
 
         pubSubService.playerWon(PlayerTypes.PLAYER1, player1.getScore(), player2.getScore());
-        resetGame();
     }
 
     private void resetGame() {
-        PlayerTypes turn = state.setTurn(PlayerTypes.PLAYER1);
-        GameBoard board = state.setGameBoard(new GameBoard());
-        
-        pubSubService.sendData2Player(state.getPlayer1Id(), turn);
-        pubSubService.sendData2Player(state.getPlayer2Id(), turn);
-        pubSubService.playerMove(Map.of(CommonConstants.GAME_BOARD, board.getBoard()));
+        String player1SessionId = state.getPlayer1SessionId();
+        String player2SessionId = state.getPlayer2SessionId();
+
+        state.setTurn(PlayerTypes.PLAYER1);
+        state.setGameBoard(new GameBoard());
+
+        state.addPlayerSession(player2SessionId);
+        state.addPlayerSession(player1SessionId);
+
+        pubSubService.updatePlayerType(state.getPlayer1SessionId(), PlayerTypes.VIEWER);
+        pubSubService.updatePlayerType(state.getPlayer2SessionId(), PlayerTypes.VIEWER);
+        state.setPlayer1Off();
+        state.setPlayer2Off();
+
+        pubSubService.updatePlayerType(state.popNextPlayerSession(), PlayerTypes.PLAYER1);
+        pubSubService.updatePlayerType(state.popNextPlayerSession(), PlayerTypes.PLAYER2);
+        pubSubService.broadcast(Map.of(CommonConstants.GAME_BOARD, state.getBoard().getBoard()));
     }
 }
