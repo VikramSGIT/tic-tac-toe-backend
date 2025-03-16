@@ -290,8 +290,8 @@ public class GameSocketServiceImpl implements GameSocketService{
         state.setTurn(PlayerTypes.PLAYER1);
         state.setGameBoard(new GameBoard());
 
-        state.addPlayerSession(player2SessionId);
         state.addPlayerSession(player1SessionId);
+        state.addPlayerSession(player2SessionId);
 
         pubSubService.updatePlayerType(state.getPlayer1SessionId(), PlayerTypes.VIEWER);
         pubSubService.updatePlayerType(state.getPlayer2SessionId(), PlayerTypes.VIEWER);
