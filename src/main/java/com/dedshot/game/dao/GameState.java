@@ -2,6 +2,7 @@ package com.dedshot.game.dao;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
@@ -21,17 +22,15 @@ public class GameState {
     private ZSetOperations<String, Object> redisZSet;
 
     public int getPlayer1Id() {
-        return (int) verify(redis.get(CommonConstants.PLAYER1));
+        return (int) get(CommonConstants.PLAYER1);
     }
 
     public String getPlayer1SessionId() {
-        return (String) verify(redis.get(CommonConstants.PLAYER1_SESSION));
+        return (String) get(CommonConstants.PLAYER1_SESSION);
     }
 
     public String getPlayer1Name() {
-        String i = (String) redis.get(CommonConstants.PLAYER1_NAME);
-        if(Objects.isNull(i)) return CommonConstants.PLAYER_OFFLINE_NAME;
-        return i;
+        return (String) get(CommonConstants.PLAYER1_NAME, CommonConstants.PLAYER_OFFLINE_NAME);
     }
 
     public String setPlayer1Name(String name) {
@@ -56,26 +55,22 @@ public class GameState {
     }
 
     public boolean isPlayer1Off() {
-        Integer res = (Integer) redis.get(CommonConstants.PLAYER1);
-        if(res == null) return true;
-        return res == CommonConstants.PLAYER_OFFLINE;
+        return ((Integer) get(CommonConstants.PLAYER1, CommonConstants.PLAYER_OFFLINE)) == CommonConstants.PLAYER_OFFLINE;
     }
 
 
 
     public int getPlayer2Id() {
-        return (int) verify(redis.get(CommonConstants.PLAYER2));
+        return (int) get(CommonConstants.PLAYER2);
     }
 
 
     public String getPlayer2SessionId() {
-        return (String) verify(redis.get(CommonConstants.PLAYER2_SESSION));
+        return (String) get(CommonConstants.PLAYER2_SESSION);
     }
 
     public String getPlayer2Name() {
-        String i = (String) redis.get(CommonConstants.PLAYER2_NAME);
-        if(Objects.isNull(i)) return CommonConstants.PLAYER_OFFLINE_NAME;
-        return i;
+        return (String) get(CommonConstants.PLAYER2_NAME, CommonConstants.PLAYER_OFFLINE_NAME);
     }
 
     public String setPlayer2Name(String name) {
@@ -100,15 +95,13 @@ public class GameState {
     }
 
     public boolean isPlayer2Off() {
-        Integer res = (Integer) redis.get(CommonConstants.PLAYER2);
-        if(res == null) return true;
-        return res == CommonConstants.PLAYER_OFFLINE;
+        return ((Integer) get(CommonConstants.PLAYER2, CommonConstants.PLAYER_OFFLINE)) == CommonConstants.PLAYER_OFFLINE;
     }
 
 
 
     public PlayerTypes getTurn() {
-        return (PlayerTypes) verify(redis.get(CommonConstants.TURN));
+        return (PlayerTypes) get(CommonConstants.TURN);
     }
 
     public PlayerTypes setTurn(PlayerTypes player) {
@@ -120,26 +113,25 @@ public class GameState {
         return setTurn(Objects.equals(getTurn(), PlayerTypes.PLAYER1) ? PlayerTypes.PLAYER2 : PlayerTypes.PLAYER1);
     }
 
-    public boolean isTurnSet() {return redis.get(CommonConstants.TURN) != null; }
-
-
+    
+    
     public GameBoard getBoard() {
         return (GameBoard) get(CommonConstants.GAME_BOARD);
     }
-
+    
     public GameBoard setGameBoard(GameBoard board) {
         set(CommonConstants.GAME_BOARD, board);
         return board;
     }
-
+    
+    // TODO: Need to be handled during deployment.
+    public boolean isTurnSet() {return redis.get(CommonConstants.TURN) != null; }
     public boolean isGameBoardSet() { return redis.get(CommonConstants.GAME_BOARD) != null; }
-
-
     public void ifGameInit() {
         if(!isTurnSet()) setTurn(PlayerTypes.PLAYER1);
         if(!isGameBoardSet()) setGameBoard(GameBoard.newGameBoard());
     }
-
+    
     public String addPlayerSession(String sessionId) {
         redisZSet.add(CommonConstants.SOCKET_SESSION_ID, sessionId, System.currentTimeMillis());
         return sessionId;
@@ -151,13 +143,18 @@ public class GameState {
 
 
     public void set(String id, Object value) {
-        redis.set(id, value);
+        redis.set(id, value, 30, TimeUnit.MINUTES);
     }
 
     public Object get(Object val) {
         return verify(redis.get(val));
     }
 
+    public Object get(Object val, Object errReturn) {
+        return verify(redis.get(val), errReturn);
+    }
+
+    //TODO: Is it really needed?
     public PlayerTypes ifPlayerType(int playerId) {
         if(getPlayer1Id() == playerId) return PlayerTypes.PLAYER1;
         else if (getPlayer2Id() == playerId) return PlayerTypes.PLAYER2;
@@ -172,6 +169,11 @@ public class GameState {
 
     private Object verify(Object val) {
         if(val == null) throw new RedisDataCorruptedException();
+        return val;
+    }
+
+    private Object verify(Object val, Object errorReturn) {
+        if(val == null) return errorReturn;
         return val;
     }
 }
